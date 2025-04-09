@@ -30,5 +30,8 @@
   },
   "overrides": {
     "esbuild": "^0.25.1"
+  },
+  "dependencies": {
+    "vue3-cropper": "^0.4.0"
   }
 }

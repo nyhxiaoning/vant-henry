@@ -40,8 +40,10 @@ import { useExpose } from '../composables/use-expose';
 import { Icon } from '../icon';
 import { showImagePreview, type ImagePreviewOptions } from '../image-preview';
 import UploaderPreviewItem from './UploaderPreviewItem';
-
+import Cropper from 'vue3-cropper';
+import 'vue3-cropper/lib/vue3-cropper.css';
 // Types
+
 import type { ImageFit } from '../image';
 import type {
   UploaderExpose,
@@ -52,6 +54,7 @@ import type {
   UploaderFileListItem,
 } from './types';
 
+const URL = window.URL || window.webkitURL;
 export const uploaderProps = {
   name: makeNumericProp(''),
   accept: makeStringProp('image/*'),
@@ -102,6 +105,12 @@ export default defineComponent({
   ],
 
   setup(props, { emit, slots }) {
+    const state = reactive({
+      cropperVisible: false,
+      imagePath: '',
+      previewImageCropper: '',
+    });
+
     const inputRef = ref();
     const urls: string[] = [];
     const reuploadIndex = ref(-1);
@@ -202,7 +211,14 @@ export default defineComponent({
 
     const onChange = (event: Event) => {
       const { files } = event.target as HTMLInputElement;
-
+      const fileTest = event?.target?.files[0];
+      if (!fileTest) {
+        alert('请选择图片');
+        return;
+      }
+      state.imagePath = URL.createObjectURL(fileTest);
+      console.log('fileTest', state.imagePath);
+      state.cropperVisible = true;
       if (props.disabled || !files || !files.length) {
         return;
       }
@@ -381,6 +397,19 @@ export default defineComponent({
       );
     };
 
+    const onSave = (res: any) => {
+      if (typeof res === 'string') {
+        state.previewImageCropper = res;
+      } else {
+        state.previewImageCropper = URL.createObjectURL(res);
+      }
+      state.cropperVisible = false;
+    };
+
+    const onCancel = () => {
+      state.cropperVisible = false;
+    };
+
     const chooseFile = () => {
       if (inputRef.value && !props.disabled) {
         inputRef.value.click();
@@ -404,6 +433,15 @@ export default defineComponent({
           {renderPreviewList()}
           {renderUpload()}
         </div>
+
+        {state.cropperVisible && (
+          <Cropper
+            imagePath={state.imagePath}
+            fileType="blob"
+            onSave={onSave}
+            onCancel={onCancel}
+          />
+        )}
       </div>
     );
   },
