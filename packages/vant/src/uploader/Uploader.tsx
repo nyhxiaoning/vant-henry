@@ -31,6 +31,7 @@ import {
   isImageFile,
   readFileContent,
 } from './utils';
+import Cropper from 'cropperjs';
 
 // Composables
 import { useCustomFieldValue } from '@vant/use';
@@ -102,6 +103,12 @@ export default defineComponent({
   ],
 
   setup(props, { emit, slots }) {
+    const showCropper = ref(false);
+    const cropperImageSrc = ref('');
+    const cropperImageRef = ref<HTMLImageElement>();
+    const cropperInstance = ref<Cropper | null>(null);
+    const pendingFile = ref<File | null>(null);
+
     const inputRef = ref();
     const urls: string[] = [];
     const reuploadIndex = ref(-1);
@@ -183,19 +190,39 @@ export default defineComponent({
           onAfterRead(fileList);
         });
       } else {
+        // TODO:单张处理的上传
+        // readFileContent(files, resultType).then((content) => {
+        //   const result: UploaderFileListItem = {
+        //     file: files as File,
+        //     status: '',
+        //     message: '',
+        //     objectUrl: URL.createObjectURL(files as File),
+        //   };
+
+        //   if (content) {
+        //     result.content = content;
+        //   }
+
+        //   onAfterRead(result);
+        // });
         readFileContent(files, resultType).then((content) => {
-          const result: UploaderFileListItem = {
-            file: files as File,
-            status: '',
-            message: '',
-            objectUrl: URL.createObjectURL(files as File),
-          };
+          const file = files as File;
 
-          if (content) {
-            result.content = content;
-          }
+          // 触发裁剪弹窗
+          pendingFile.value = file;
+          cropperImageSrc.value = content as string;
+          showCropper.value = true;
 
-          onAfterRead(result);
+          nextTick(() => {
+            if (cropperImageRef.value) {
+              cropperInstance.value = new Cropper(cropperImageRef.value, {
+                viewMode: 1,
+                aspectRatio: 1, // 可自定义比例
+                autoCropArea: 1,
+                responsive: true,
+              });
+            }
+          });
         });
       }
     };
@@ -391,6 +418,45 @@ export default defineComponent({
       urls.forEach((url) => URL.revokeObjectURL(url));
     });
 
+    const confirmCrop = () => {
+      if (cropperInstance.value) {
+        cropperInstance.value.getCroppedCanvas().toBlob((blob) => {
+          if (blob && pendingFile.value) {
+            const croppedFile = new File([blob], pendingFile.value.name, {
+              type: pendingFile.value.type,
+            });
+
+            // 走原本的读取逻辑
+            const result: UploaderFileListItem = {
+              file: croppedFile,
+              status: '',
+              message: '',
+              objectUrl: URL.createObjectURL(croppedFile),
+            };
+
+            readFileContent(croppedFile, props.resultType).then((content) => {
+              result.content = content as string;
+              onAfterRead(result);
+            });
+
+            cleanupCropper();
+          }
+        }, pendingFile.value.type);
+      }
+    };
+
+    const cancelCrop = () => {
+      cleanupCropper();
+    };
+
+    const cleanupCropper = () => {
+      cropperInstance.value?.destroy();
+      cropperInstance.value = null;
+      showCropper.value = false;
+      pendingFile.value = null;
+      cropperImageSrc.value = '';
+    };
+
     useExpose<UploaderExpose>({
       chooseFile,
       reuploadFile,
@@ -404,6 +470,22 @@ export default defineComponent({
           {renderPreviewList()}
           {renderUpload()}
         </div>
+
+        {showCropper.value && (
+          <div class="cropper-modal">
+            <div class="cropper-box">
+              <img
+                ref={cropperImageRef}
+                src={cropperImageSrc.value}
+                style="max-width: 100%;"
+              />
+              <div class="cropper-actions">
+                <button onClick={confirmCrop}>确认裁剪</button>
+                <button onClick={cancelCrop}>取消</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   },

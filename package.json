@@ -30,5 +30,8 @@
   },
   "overrides": {
     "esbuild": "^0.25.1"
+  },
+  "dependencies": {
+    "cropperjs": "^2.0.0"
   }
 }

@@ -1,3 +1,11 @@
+## 开发一个组件库：上传的时候，先截图，然后再上传
+
+[]: # 1. 截图锁定当前的版本：核心使用了：import Cropper from 'cropperjs'
+
+已经结合实现的组件库：https://github.com/Agontuk/vue-cropperjs
+
+[]: # 2. 上传 []: # 3. 组件库 []: # 4. 文档
+
 <p align="center">
     <img alt="logo" src="https://fastly.jsdelivr.net/npm/@vant/assets/logo.png" width="120" style="margin-bottom: 10px;">
 </p>
