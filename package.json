@@ -32,6 +32,7 @@
     "esbuild": "^0.25.1"
   },
   "dependencies": {
-    "cropperjs": "^2.0.0"
+    "cropperjs": "^2.0.0",
+    "vue3-cropper": "^0.4.0"
   }
 }

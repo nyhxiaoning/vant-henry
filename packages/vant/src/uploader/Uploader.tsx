@@ -214,14 +214,20 @@ export default defineComponent({
           showCropper.value = true;
 
           nextTick(() => {
-            if (cropperImageRef.value) {
-              cropperInstance.value = new Cropper(cropperImageRef.value, {
-                viewMode: 1,
-                aspectRatio: 1, // 可自定义比例
-                autoCropArea: 1,
-                responsive: true,
-              });
-            }
+            setTimeout(() => {
+              if (cropperImageRef.value) {
+                cropperInstance.value?.destroy(); // 清理旧的
+                cropperInstance.value = new Cropper(cropperImageRef.value, {
+                  viewMode: 1,
+                  aspectRatio: 1,
+                  autoCropArea: 1,
+                  responsive: true,
+                  ready() {
+                    console.log('Cropper ready');
+                  },
+                });
+              }
+            }, 50); // 延迟一点点初始化
           });
         });
       }
